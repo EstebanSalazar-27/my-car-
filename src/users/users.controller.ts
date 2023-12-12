@@ -1,13 +1,16 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
   Query,
   Session,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { CreateUserDto } from './dtos/create-user.dto';
@@ -19,6 +22,8 @@ import { AuthService } from './auth/auth.service';
 import { CurrentUser } from './decorators/current.user.decorator';
 import { CurrentUserInterceptor } from './interceptors/current.user.interceptor';
 import { User } from './user.entity';
+import { NotFoundError } from 'rxjs';
+import { AuthGuard } from './guards/auth.guard';
 
 @Controller('users')
 @Serialize<UserDto>(new UserDto())
@@ -43,15 +48,20 @@ export class UsersController {
     session.userId = user.id;
     return user;
   }
+  @Get('/auth/signout')
+  signOut(@Session() session: any) {
+    session.userId = null;
+  }
   @Patch('/update/:id')
   updateUser(@Param('id') id: string, @Body() body: UpdateUserDto) {
     return this.userService.updateUser(parseInt(id), body);
   }
   @Get('/currentUser')
-    getCurrentSignedUser(@CurrentUser() user: User){
-      console.log(user, ' here ')
-      return user
-    }
+  @UseGuards(AuthGuard)
+  getCurrentSignedUser(@CurrentUser() user: User) {
+    if (!user) throw new BadRequestException('No user signed in');
+    return user;
+  }
   @Get('/:id')
   getUserById(@Param('id') id: string) {
     return this.userService.getUserById(parseInt(id));

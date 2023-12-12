@@ -17,9 +17,7 @@ export class CurrentUserInterceptor implements NestInterceptor {
     // Check if there's a user id no falsie
     // Set the currentUser in the request json
     if (userId) {
-      console.log(userId);
       const user = await this.usersService.getUserById(userId);
-      console.log(user, ' user');
       request.currentUser = user;
     }
     // else handle the route
